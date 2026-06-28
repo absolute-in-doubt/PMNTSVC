@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: paymentservice
+
+application:
+  persistence:
+    mongodb:
+      uri: mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWD}@${MONGODB_HOSTNAME}:27017/payment_service_db?authSource=admin
