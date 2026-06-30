@@ -18,7 +18,7 @@ public class UpdateOrderEventListener {
     private final UpdateOrderOutboxRepository repository;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void on(UpdateOrderEvent event){
         UpdateOrderOutboxEntity entity = new UpdateOrderOutboxEntity();
         entity.setOrderId(event.orderId());
