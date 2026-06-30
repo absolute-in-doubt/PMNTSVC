@@ -9,6 +9,14 @@ application:
   paymentGateway:
     randomMockPaymentGatewayUrl: https://api.random.org/json-rpc/4/invoke
     apiKey: ${RANDOM_ORG_API_KEY}
+  task:
+    scheduling:
+      poolSize: 10
+      threadNamePrefix: scheduling-
+      shutdown:
+        awaitTerminationPeriodSeconds: 180
+      outboxRetryWorker:
+        rateMillis: 100
 
 resilience4j:
   circuitbreaker:

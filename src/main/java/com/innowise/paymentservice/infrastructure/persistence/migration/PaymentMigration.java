@@ -65,7 +65,10 @@ public class PaymentMigration {
                                 .append("description", "must be a date and is required"))
                         .append("payment_amount", new Document()
                                 .append("bsonType", "decimal")
-                                .append("description", "must be a decimal and is required"))));
+                                .append("description", "must be a decimal and is required"))
+                        .append("version", new Document()
+                                .append("bsonType", "long")
+                                .append("description", "optimistic locking version field"))));
 
         ValidationOptions validationOptions = new ValidationOptions()
                 .validator(validator)

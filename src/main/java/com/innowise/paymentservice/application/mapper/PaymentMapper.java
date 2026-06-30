@@ -1,6 +1,7 @@
 package com.innowise.paymentservice.application.mapper;
 
 import com.innowise.paymentservice.application.dto.CreatePaymentRequestDto;
+import com.innowise.paymentservice.application.dto.PaymentResponseDto;
 import com.innowise.paymentservice.domain.model.Payment;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
@@ -9,4 +10,6 @@ import org.mapstruct.MappingConstants;
 public interface PaymentMapper {
 
     Payment toEntity(CreatePaymentRequestDto dto);
+
+    PaymentResponseDto toDto(Payment entity);
 }
