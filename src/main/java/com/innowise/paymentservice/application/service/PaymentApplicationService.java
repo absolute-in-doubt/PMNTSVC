@@ -3,7 +3,7 @@ package com.innowise.paymentservice.application.service;
 import com.innowise.paymentservice.application.dto.*;
 import org.springframework.data.domain.Page;
 
-public interface PaymentService {
+public interface PaymentApplicationService {
 
     PaymentResponseDto initiatePayment(Long userId, CreatePaymentRequestDto requestDto);
 

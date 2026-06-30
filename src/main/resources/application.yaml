@@ -6,3 +6,36 @@ application:
   persistence:
     mongodb:
       uri: mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWD}@${MONGODB_HOSTNAME}:27017/payment_service_db?authSource=admin
+  paymentGateway:
+    randomMockPaymentGatewayUrl: https://api.random.org/json-rpc/4/invoke
+    apiKey: ${RANDOM_ORG_API_KEY}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentGateway:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - java.io.IOException
+          - org.springframework.web.client.ResourceAccessException
+          - java.lang.NullPointerException #in case the response dto is empty
+
+  retry:
+    instances:
+      paymentGateway:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.io.IOException
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpClientErrorException
