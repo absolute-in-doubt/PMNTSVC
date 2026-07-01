@@ -3,6 +3,7 @@ package com.innowise.paymentservice.application.port.in;
 import com.innowise.paymentservice.application.dto.*;
 import com.innowise.paymentservice.domain.model.PaymentSummaryFilter;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 
@@ -14,7 +15,7 @@ public interface PaymentsController {
 
     ResponseEntity<PaymentResponseDto> getPaymentById(Authentication authentication, String paymentId);
 
-    ResponseEntity<Page<PaymentResponseDto>> getPaymentsFiltered(Authentication authentication, PaymentFilterRequest paymentFilter);
+    ResponseEntity<Page<PaymentResponseDto>> getPaymentsFiltered(Authentication authentication, PaymentFilterRequest paymentFilter, Pageable pageable);
 
     ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAuthenticatedUser(Authentication authentication, PaymentSummaryFilter psFilter);
 

@@ -1,0 +1,143 @@
+package com.innowise.paymentservice.infrastructure.adapter.in;
+
+import com.innowise.paymentservice.application.dto.*;
+import com.innowise.paymentservice.application.port.in.PaymentsController;
+import com.innowise.paymentservice.application.service.PaymentApplicationService;
+import com.innowise.paymentservice.domain.model.PaymentSummaryFilter;
+import com.innowise.paymentservice.domain.model.PaymentStatus;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+
+@RestController
+@RequestMapping("/api/payments")
+@RequiredArgsConstructor
+public class PaymentsControllerImpl implements PaymentsController {
+
+    private final PaymentApplicationService paymentApplicationService;
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @Override
+    public ResponseEntity<PaymentResponseDto> initiatePayment(
+            Authentication authentication,
+            @RequestBody CreatePaymentRequestDto requestDto) {
+        
+        Long userId = extractUserId(authentication);
+        PaymentResponseDto responseDto = paymentApplicationService.initiatePayment(userId, requestDto);
+        
+        // Return 202 Accepted with PENDING status
+        // Create a new DTO with PENDING status since PaymentResponseDto is a record (immutable)
+        PaymentResponseDto pendingDto = new PaymentResponseDto(
+                responseDto.id(),
+                responseDto.orderId(),
+                responseDto.userId(),
+                PaymentStatus.PENDING,
+                responseDto.timestamp(),
+                responseDto.amount()
+        );
+        
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(pendingDto);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @Override
+    public ResponseEntity<PaymentResponseDto> getPaymentById(
+            Authentication authentication,
+            @PathVariable("id") String paymentId) {
+        
+        Long userId = extractUserId(authentication);
+        boolean isAdmin = hasRole(authentication, "ADMIN");
+        
+        PaymentResponseDto responseDto = paymentApplicationService.getPaymentById(userId, paymentId, isAdmin);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @Override
+    public ResponseEntity<Page<PaymentResponseDto>> getPaymentsFiltered(
+            Authentication authentication,
+            PaymentFilterRequest paymentFilter,
+            @PageableDefault Pageable pageable) {
+        
+        Long userId = extractUserId(authentication);
+        boolean isAdmin = hasRole(authentication, "ADMIN");
+        
+        Page<PaymentResponseDto> result = paymentApplicationService.getPaymentsFiltered(
+                userId, paymentFilter, isAdmin, pageable);
+        
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/users/summary")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @Override
+    public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAuthenticatedUser(
+            Authentication authentication,
+            PaymentSummaryFilter psFilter) {
+        
+        Long authenticatedUserId = extractUserId(authentication);
+        boolean isAdmin = hasRole(authentication, "ADMIN");
+        
+        // For USER role, override userId with their own ID
+        Long userIdToUse = isAdmin && psFilter.userId() != null ? psFilter.userId() : authenticatedUserId;
+        
+        PaymentSummaryFilter filterToUse = new PaymentSummaryFilter(userIdToUse, psFilter.timestampFrom(), psFilter.timestampTo());
+        PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
+                filterToUse.userId(), filterToUse.timestampFrom(), filterToUse.timestampTo(), isAdmin);
+        
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/summary")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Override
+    public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAdmin(
+            Authentication authentication,
+            PaymentSummaryFilter psFilter) {
+        
+        boolean isAdmin = hasRole(authentication, "ADMIN");
+        PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
+                psFilter.userId(), psFilter.timestampFrom(), psFilter.timestampTo(), isAdmin);
+        
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/summary/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Override
+    public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAll(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime timestampFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime timestampTo) {
+        
+        PaymentSummaryFilter psFilter = new PaymentSummaryFilter(null, timestampFrom, timestampTo);
+        PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
+                null, timestampFrom, timestampTo, true);
+        
+        return ResponseEntity.ok(result);
+    }
+
+    private Long extractUserId(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+        return Long.parseLong(authentication.getName());
+    }
+
+    private boolean hasRole(Authentication authentication, String role) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
+    }
+}
