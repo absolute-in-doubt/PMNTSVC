@@ -35,19 +35,8 @@ public class PaymentsControllerImpl implements PaymentsController {
         
         Long userId = extractUserId(authentication);
         PaymentResponseDto responseDto = paymentApplicationService.initiatePayment(userId, requestDto);
-        
-        // Return 202 Accepted with PENDING status
-        // Create a new DTO with PENDING status since PaymentResponseDto is a record (immutable)
-        PaymentResponseDto pendingDto = new PaymentResponseDto(
-                responseDto.id(),
-                responseDto.orderId(),
-                responseDto.userId(),
-                PaymentStatus.PENDING,
-                responseDto.timestamp(),
-                responseDto.amount()
-        );
-        
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(pendingDto);
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(responseDto);
     }
 
     @GetMapping("/{id}")
@@ -138,6 +127,6 @@ public class PaymentsControllerImpl implements PaymentsController {
 
     private boolean hasRole(Authentication authentication, String role) {
         return authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
+                .anyMatch(a -> a.getAuthority().equals(role));
     }
 }
