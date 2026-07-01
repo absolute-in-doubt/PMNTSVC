@@ -1,9 +1,12 @@
 package com.innowise.paymentservice.application.port.in;
 
 import com.innowise.paymentservice.application.dto.*;
+import com.innowise.paymentservice.domain.model.PaymentSummaryFilter;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+
+import java.time.LocalDateTime;
 
 public interface PaymentsController {
 
@@ -11,11 +14,11 @@ public interface PaymentsController {
 
     ResponseEntity<PaymentResponseDto> getPaymentById(Authentication authentication, String paymentId);
 
-    ResponseEntity<Page<PaymentResponseDto>> getPaymentsFiltered(Authentication authentication, PaymentFilter paymentFilter);
+    ResponseEntity<Page<PaymentResponseDto>> getPaymentsFiltered(Authentication authentication, PaymentFilterRequest paymentFilter);
 
     ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAuthenticatedUser(Authentication authentication, PaymentSummaryFilter psFilter);
 
     ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAdmin(Authentication authentication, PaymentSummaryFilter psFilter);
 
-    ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAll(PaymentSummaryFilter psFilter);
+    ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAll(LocalDateTime timestampFrom, LocalDateTime timestampTo);
 }
