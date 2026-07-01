@@ -50,7 +50,10 @@ public class PaymentMigration {
         Document validator = new Document("$jsonSchema", new Document()
                 .append("bsonType", "object")
                 .append("required", Arrays.asList("order_id", "user_id", "status", "timestamp", "payment_amount"))
+                .append("additionalProperties", false)
                 .append("properties", new Document()
+                        .append("_id",
+                                new Document("bsonType", "objectid"))
                         .append("order_id", new Document()
                                 .append("bsonType", "long")
                                 .append("description", "must be a long and is required"))
@@ -68,7 +71,17 @@ public class PaymentMigration {
                                 .append("description", "must be a decimal and is required"))
                         .append("version", new Document()
                                 .append("bsonType", "long")
-                                .append("description", "optimistic locking version field"))));
+                                .append("description", "optimistic locking version field"))
+                        .append("locked_by", new Document()
+                                .append("bsonType", "string")
+                                .append("description", "pessimistic locking lock holder name"))
+                        .append("locked_until", new Document()
+                                .append("bsonType", "date")
+                                .append("description", "pessimistic locking timestamp")
+                        )
+
+                )
+        );
 
         ValidationOptions validationOptions = new ValidationOptions()
                 .validator(validator)
