@@ -24,7 +24,8 @@ import java.util.Set;
 )
 public class PaymentMigration {
 
-    private static final String COLLECTION_NAME = "payments";
+    private static final String PAYMENTS_COLLECTION_NAME = "payments";
+    private static final String OUTBOX_COLLECTION_NAME = "update_order_outbox";
     private final MongoTemplate mongoTemplate;
 
     public PaymentMigration(MongoTemplate mongoTemplate) {
@@ -34,17 +35,24 @@ public class PaymentMigration {
     @Execution
     public void changeSet() {
         Set<String> existingCollections = mongoTemplate.getCollectionNames();
-        if (existingCollections.contains(COLLECTION_NAME)) {
+        if (existingCollections.contains(PAYMENTS_COLLECTION_NAME)) {
 
-            createIndexes();
+            createPaymentIndexes();
             return;
         }
 
-        createCollectionWithValidation();
-        createIndexes();
+        createPaymentCollectionWithValidation();
+        createPaymentIndexes();
+
+        if(existingCollections.contains(OUTBOX_COLLECTION_NAME)) {
+
+            //TODO create outbox indexes
+            return;
+        }
+        createOutboxCollectionWithValidation();
     }
 
-    private void createCollectionWithValidation() {
+    private void createPaymentCollectionWithValidation() {
         MongoDatabase db = mongoTemplate.getDb();
 
         Document validator = new Document("$jsonSchema", new Document()
@@ -72,13 +80,6 @@ public class PaymentMigration {
                         .append("version", new Document()
                                 .append("bsonType", "long")
                                 .append("description", "optimistic locking version field"))
-                        .append("locked_by", new Document()
-                                .append("bsonType", "string")
-                                .append("description", "pessimistic locking lock holder name"))
-                        .append("locked_until", new Document()
-                                .append("bsonType", "date")
-                                .append("description", "pessimistic locking timestamp")
-                        )
 
                 )
         );
@@ -91,10 +92,53 @@ public class PaymentMigration {
         CreateCollectionOptions collectionOptions = new CreateCollectionOptions()
                 .validationOptions(validationOptions);
 
-        db.createCollection(COLLECTION_NAME, collectionOptions);
+        db.createCollection(PAYMENTS_COLLECTION_NAME, collectionOptions);
     }
 
-    private void createIndexes() {
+    private void createOutboxCollectionWithValidation(){
+        MongoDatabase db = mongoTemplate.getDb();
+
+        Document validator = new Document("$jsonSchema", new Document()
+                .append("bsonType", "object")
+                .append("required", Arrays.asList("order_id", "user_id", "status", "timestamp", "payment_amount"))
+                .append("additionalProperties", false)
+                .append("properties", new Document()
+                        .append("_id",
+                                new Document("bsonType", "objectid"))
+                        .append("order_id", new Document()
+                                .append("bsonType", "long")
+                                .append("description", "must be a long and is required"))
+                        .append("order_status", new Document()
+                                .append("enum", Arrays.asList("PAID", "CANCELLED", "PAYMENT_FAILED"))
+                                .append("description", "must be one of the OrderStatus enum values"))
+                        .append("outbox_event_status", new Document()
+                                .append("enum", Arrays.asList("UNPROCESSED", "COMPLETED", "DEAD_LETTER"))
+                                .append("description", "must be one of the OrderStatus enum values"))
+                        .append("processing_attempts", new Document()
+                                .append("bsonType", "int")
+                                .append("description", "amount of attempts to process this message so far"))
+                        .append("locked_by", new Document()
+                                .append("bsonType", "string")
+                                .append("description", "pessimistic locking lock holder name"))
+                        .append("locked_until", new Document()
+                                .append("bsonType", "date")
+                                .append("description", "pessimistic locking timestamp")
+                        )
+                )
+        );
+
+        ValidationOptions validationOptions = new ValidationOptions()
+                .validator(validator)
+                .validationLevel(ValidationLevel.STRICT)
+                .validationAction(ValidationAction.ERROR);
+
+        CreateCollectionOptions collectionOptions = new CreateCollectionOptions()
+                .validationOptions(validationOptions);
+
+        db.createCollection(OUTBOX_COLLECTION_NAME, collectionOptions);
+    }
+
+    private void createPaymentIndexes() {
         mongoTemplate.indexOps(Payment.class)
                 .createIndex(new Index().on("user_id", Direction.ASC));
         mongoTemplate.indexOps(Payment.class)
@@ -103,6 +147,6 @@ public class PaymentMigration {
 
     @RollbackExecution
     public void rollback() {
-        mongoTemplate.dropCollection(COLLECTION_NAME);
+        mongoTemplate.dropCollection(OUTBOX_COLLECTION_NAME);
     }
 }

@@ -6,6 +6,20 @@ services:
     depends_on:
       orderservice:
         condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  kafka:
+    container_name: 'paymentservice_kafka'
+    image: 'apache/kafka:4.0.0'
+    ports:
+      - "9092:9092"
+    env_file:
+      - env/kafka.env
+    volumes:
+      - kafka_data:/var/lib/kafka/data
 
   mongodb:
     container_name: 'paymentservice_mongodb'
@@ -124,3 +138,5 @@ volumes:
   postgres_data-1:
   postgres_data-2:
   postgres_data-3:
+  mongodb_data:
+  kafka_data:

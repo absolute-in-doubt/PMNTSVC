@@ -35,12 +35,6 @@ public class Payment {
     @Field("payment_amount")
     private BigDecimal paymentAmount;
 
-    @Field("locked_by")
-    private String lockedBy;
-
-    @Field("locked_until")
-    private LocalDateTime lockedUntil;
-
     @Version
     private Long version;
 }

@@ -9,6 +9,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "update_order_outbox")
 @Getter
 @Setter
@@ -27,4 +29,13 @@ public class UpdateOrderOutboxEntity {
 
     @Field("outbox_event_status")
     private OutboxEventStatus outboxEventStatus;
+
+    @Field("processing_attempts")
+    private int processingAttempts;
+
+    @Field("locked_by")
+    private String lockedBy;
+
+    @Field("locked_until")
+    private LocalDateTime lockedUntil;
 }

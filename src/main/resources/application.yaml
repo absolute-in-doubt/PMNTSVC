@@ -17,6 +17,8 @@ application:
         awaitTerminationPeriodSeconds: 180
       outboxRetryWorker:
         rateMillis: 100
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
 
 resilience4j:
   circuitbreaker:
@@ -47,3 +49,4 @@ resilience4j:
           - java.io.IOException
           - org.springframework.web.client.ResourceAccessException
           - org.springframework.web.client.HttpClientErrorException
+      kafkaOrderService:
