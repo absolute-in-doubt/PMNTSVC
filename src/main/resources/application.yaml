@@ -5,7 +5,7 @@ spring:
 application:
   persistence:
     mongodb:
-      uri: mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWD}@${MONGODB_HOSTNAME}:27017/payment_service_db?authSource=admin
+      uri: mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWD}@${MONGODB_HOSTNAME}:27017/payment_service_db?authSource=admin&replicaSet=rs0
   paymentGateway:
     randomMockPaymentGatewayUrl: https://api.random.org/json-rpc/4/invoke
     apiKey: ${RANDOM_ORG_API_KEY}
