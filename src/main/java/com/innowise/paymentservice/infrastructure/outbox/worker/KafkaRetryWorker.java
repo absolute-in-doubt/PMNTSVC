@@ -35,7 +35,7 @@ public class KafkaRetryWorker {
     @Value("${application.kafka.topic-names.updateOrderStatus}")
     private String updateOrderStatusTopicName;
 
-    @Scheduled(fixedDelayString = "${spring.task.scheduling.outboxRetryWorker.delayMillis}")
+    @Scheduled(fixedDelayString = "${application.task.scheduling.outboxRetryWorker.delayMillis}")
     public void process(){
         int processed = 0;
 

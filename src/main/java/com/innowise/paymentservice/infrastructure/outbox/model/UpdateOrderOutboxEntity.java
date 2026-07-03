@@ -1,5 +1,6 @@
 package com.innowise.paymentservice.infrastructure.outbox.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.innowise.paymentservice.domain.model.OrderStatus;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -21,9 +22,11 @@ public class UpdateOrderOutboxEntity {
     @Id
     private String id;
 
+    @JsonProperty("order_id")
     @Field("order_id")
     private Long orderId;
 
+    @JsonProperty("order_status")
     @Field("order_status")
     private OrderStatus orderStatus;
 

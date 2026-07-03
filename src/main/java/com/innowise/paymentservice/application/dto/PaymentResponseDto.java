@@ -14,6 +14,6 @@ public record PaymentResponseDto(
         @JsonView(Views.Admin.class) @JsonProperty("user_id") Long userId,
         @JsonView(Views.User.class) PaymentStatus status,
         @JsonView(Views.User.class) LocalDateTime timestamp,
-        @JsonView(Views.User.class) BigDecimal amount
+        @JsonView(Views.User.class) BigDecimal paymentAmount
 ) {
 }

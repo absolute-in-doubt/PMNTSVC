@@ -3,13 +3,17 @@ spring:
     name: paymentservice
   data:
     mongodb:
-      uri: mongodb://${MONGODB_USERNAME:testusername}:${MONGODB_PASSWD:testpassword}@${MONGODB_HOSTNAME:localhost}:27017/payment_service_db?authSource=admin&replicaSet=rs0&retryWrites=false
+      uri: mongodb://testusername:testpassword@localhost:27017/payment_service_db?authSource=admin&replicaSet=rs0&retryWrites=false
 
+logging:
+  level:
+    org.springframework.data.mongodb: DEBUG
+    org.mongodb.driver: DEBUG
+    org.springframework.boot.autoconfigure.data.mongo: DEBUG
 
-application:
   paymentGateway:
     randomMockPaymentGatewayUrl: https://api.random.org/json-rpc/4/invoke
-    apiKey: ${RANDOM_ORG_API_KEY}
+    apiKey: https://www.youtube.com/watch?v=9uE5B7r5Dp4
   task:
     scheduling:
       poolSize: 3
@@ -23,15 +27,12 @@ application:
       retriesThreshold: 10
       maxEventsProcessedPerCycle: 100
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    bootstrap-servers: kafka:9092
     producer-send-timeout-ms: 3000
     topic-names:
-      updateOrderStatus: ${UPDATE_ORDER_STATUS_KAFKA_TOPIC_NAME:test_topic}
+      updateOrderStatus: test_topic
   security:
-    jwksUrl: ${JWKS_URL:http://authservice:8081/.well-known/jwks}
-
-server:
-  port: 8084
+    jwksUrl: http://authservice:8081/.well-known/jwks
 
 resilience4j:
   circuitbreaker:
@@ -62,3 +63,4 @@ resilience4j:
           - java.io.IOException
           - org.springframework.web.client.ResourceAccessException
           - org.springframework.web.client.HttpClientErrorException
+

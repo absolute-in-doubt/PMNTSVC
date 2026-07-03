@@ -21,10 +21,19 @@ public class PaymentAggregationRepositoryImpl implements PaymentAggregationRepos
 
         if(psFilter.userId() != null)
             criteria.and("userId").is(psFilter.userId());
-        if(psFilter.timestampFrom() != null)
-            criteria.and("timestamp").gte(psFilter.timestampFrom());
-        if(psFilter.timestampTo() != null)
-            criteria.and("timestamp").lte(psFilter.timestampTo());
+
+        if (psFilter.timestampFrom() != null || psFilter.timestampTo() != null) {
+            Criteria timestamp = criteria.and("timestamp");
+
+            if (psFilter.timestampFrom() != null) {
+                timestamp.gte(psFilter.timestampFrom());
+            }
+
+            if (psFilter.timestampTo() != null) {
+                timestamp.lte(psFilter.timestampTo());
+            }
+        }
+
 
         Aggregation aggregation = Aggregation.newAggregation(
                 Aggregation.match(

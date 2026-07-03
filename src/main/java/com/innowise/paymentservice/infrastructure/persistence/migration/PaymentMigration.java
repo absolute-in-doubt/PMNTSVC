@@ -100,7 +100,7 @@ public class PaymentMigration {
 
         Document validator = new Document("$jsonSchema", new Document()
                 .append("bsonType", "object")
-                .append("required", Arrays.asList("order_id", "user_id", "status", "timestamp", "payment_amount"))
+                .append("required", Arrays.asList("order_id", "order_status", "outbox_event_status"))
                 .append("additionalProperties", false)
                 .append("properties", new Document()
                         .append("_id",
