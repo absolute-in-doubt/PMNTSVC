@@ -27,12 +27,12 @@ public class PaymentFilteringRepositoryImpl implements PaymentFilteringRepositor
 
         if(paymentFilter.getOrderId() != null)
             query.addCriteria(
-                    Criteria.where("order_id").is(paymentFilter.getOrderId())
+                    Criteria.where("orderId").is(paymentFilter.getOrderId())
             );
 
         if(paymentFilter.getUserId() != null)
             query.addCriteria(
-                    Criteria.where("user_id").is(paymentFilter.getUserId())
+                    Criteria.where("userId").is(paymentFilter.getUserId())
             );
 
         if(paymentFilter.getStatuses() != null && !paymentFilter.getStatuses().isEmpty())

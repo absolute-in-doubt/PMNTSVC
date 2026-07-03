@@ -27,19 +27,21 @@ public class UpdateOrderOutboxExtensionRepositoryImpl implements UpdateOrderOutb
     public Optional<UpdateOrderOutboxEntity> findUnprocessedUnlockedWithLeaseLock() {
         Query query = new Query();
 
+        LocalDateTime now = LocalDateTime.now();
+
         Criteria criteria = new Criteria().andOperator(
-                Criteria.where("status").is(OutboxEventStatus.UNPROCESSED),
+                Criteria.where("outboxEventStatus").is(OutboxEventStatus.UNPROCESSED),
                 new Criteria().orOperator(
-                        Criteria.where("locked_until").exists(false),
-                        Criteria.where("locked_until").lt(LocalDateTime.now())
+                        Criteria.where("lockedUntil").exists(false),
+                        Criteria.where("lockedUntil").lt(now)
                 )
         );
 
         query.addCriteria(criteria);
 
         Update update = new Update()
-                .set("locked_until", LocalDateTime.now().plus(LEASE_TIME_MS, ChronoUnit.MILLIS))
-                .set("lease_token", UUID.randomUUID().toString());
+                .set("lockedUntil", now.plus(LEASE_TIME_MS, ChronoUnit.MILLIS))
+                .set("leaseToken", UUID.randomUUID().toString());
 
         return Optional.ofNullable(mongoTemplate.findAndModify(
                 query,
@@ -53,17 +55,16 @@ public class UpdateOrderOutboxExtensionRepositoryImpl implements UpdateOrderOutb
     public boolean updateWithLeaseToken(UpdateOrderOutboxEntity entity, String leaseToken) {
 
         Update update = new Update()
-                .set("status", entity.getOrderStatus())
-                .set("outbox_event_status", entity.getOutboxEventStatus())
-                .set("locked_until", entity.getLockedUntil())
-                .set("retry_count", entity.getRetryCount());
+                .set("outboxEventStatus", entity.getOutboxEventStatus())
+                .set("lockedUntil", entity.getLockedUntil())
+                .set("retryCount", entity.getRetryCount());
 
         Criteria criteria = new Criteria().andOperator(
                 Criteria.where("status").is(OutboxEventStatus.UNPROCESSED),
                 new Criteria().andOperator(
-                        Criteria.where("_id").is(entity.getId()),
-                        Criteria.where("locked_until").lt(LocalDateTime.now()),
-                        Criteria.where("lease_token").is(leaseToken)
+                        Criteria.where("id").is(entity.getId()),
+                        Criteria.where("lockedUntil").lt(LocalDateTime.now()),
+                        Criteria.where("leaseToken").is(leaseToken)
                 )
         );
 

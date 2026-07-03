@@ -23,7 +23,7 @@ public class PaymentAggregationRepositoryImpl implements PaymentAggregationRepos
         Criteria criteria = Criteria.where("status").is(PaymentStatus.SUCCESS);
 
         if(psFilter.userId() != null)
-            criteria.and("user_id").is(psFilter.userId());
+            criteria.and("userId").is(psFilter.userId());
         if(psFilter.timestampFrom() != null)
             criteria.and("timestamp").gte(psFilter.timestampFrom());
         if(psFilter.timestampTo() != null)
