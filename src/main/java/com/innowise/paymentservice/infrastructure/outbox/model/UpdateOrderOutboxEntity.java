@@ -30,12 +30,16 @@ public class UpdateOrderOutboxEntity {
     @Field("outbox_event_status")
     private OutboxEventStatus outboxEventStatus;
 
-    @Field("processing_attempts")
-    private int processingAttempts;
-
-    @Field("locked_by")
-    private String lockedBy;
-
     @Field("locked_until")
     private LocalDateTime lockedUntil;
+
+    @Field("lease_token")
+    private String leaseToken;
+
+    @Field("retry_count")
+    private int retryCount;
+
+    public void incrementRetryCount(){
+        retryCount++;
+    }
 }

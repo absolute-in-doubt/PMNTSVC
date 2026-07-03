@@ -114,17 +114,15 @@ public class PaymentMigration {
                         .append("outbox_event_status", new Document()
                                 .append("enum", Arrays.asList("UNPROCESSED", "COMPLETED", "DEAD_LETTER"))
                                 .append("description", "must be one of the OrderStatus enum values"))
-                        .append("processing_attempts", new Document()
-                                .append("bsonType", "int")
-                                .append("description", "amount of attempts to process this message so far"))
-                        .append("locked_by", new Document()
-                                .append("bsonType", "string")
-                                .append("description", "pessimistic locking lock holder name"))
                         .append("locked_until", new Document()
                                 .append("bsonType", "date")
-                                .append("description", "pessimistic locking timestamp")
-                        )
+                                .append("description", "lease locking end timestamp"))
+                        .append("retry_count", new Document()
+                                .append("bsonType", "int32")
+                                .append("description", "amt of unsuccessful attempts to send the event"))
                 )
+                //I'll decide what indexes to add to the outbox table a bit later
+                //But most likely I'll be too lazy to do that:)
         );
 
         ValidationOptions validationOptions = new ValidationOptions()

@@ -18,12 +18,18 @@ public class KafkaProducerConfig {
     @Value("${application.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
+    @Value("${application.kafka.producer-send-timeout-ms}")
+    private Long producerSendTimeoutMs;
+
 
     public Map<String, Object> producerConfig() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, producerSendTimeoutMs);
+        props.put(ProducerConfig.RETRIES_CONFIG, 10);
+        props.put(ProducerConfig.ACKS_CONFIG, -1);
         return props;
     }
 

@@ -11,14 +11,21 @@ application:
     apiKey: ${RANDOM_ORG_API_KEY}
   task:
     scheduling:
-      poolSize: 10
+      poolSize: 3
       threadNamePrefix: scheduling-
       shutdown:
         awaitTerminationPeriodSeconds: 180
       outboxRetryWorker:
-        rateMillis: 100
+        delayMillis: 30000
+  outbox:
+    worker:
+      retriesThreshold: 10
+      maxEventsProcessedPerCycle: 100
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    producer-send-timeout-ms: 3000
+    topic-names:
+      updateOrderStatus: ${UPDATE_ORDER_STATUS_KAFKA_TOPIC_NAME}
 
 resilience4j:
   circuitbreaker:
@@ -49,4 +56,3 @@ resilience4j:
           - java.io.IOException
           - org.springframework.web.client.ResourceAccessException
           - org.springframework.web.client.HttpClientErrorException
-      kafkaOrderService:

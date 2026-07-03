@@ -1,15 +1,20 @@
 package com.innowise.paymentservice.infrastructure.outbox.worker;
 
-import com.innowise.paymentservice.domain.port.out.PaymentRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innowise.paymentservice.infrastructure.outbox.model.OutboxEventStatus;
+import com.innowise.paymentservice.infrastructure.outbox.model.UpdateOrderOutboxEntity;
 import com.innowise.paymentservice.infrastructure.outbox.out.UpdateOrderOutboxRepository;
-import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 
 @Slf4j
@@ -18,30 +23,65 @@ import org.springframework.transaction.annotation.Transactional;
 public class KafkaRetryWorker {
 
     private final UpdateOrderOutboxRepository updateOrderOutboxRepository;
-    private final PaymentRepository paymentRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
-    private final String KAFKA_ORDER_SERVICE = "kafkaOrderService";
-
-    @Value("${application.outbox.workerRetriesThreshold}")
+    @Value("${application.outbox.worker.retriesThreshold}")
     private int workerRetriesThreshold;
 
-    @Scheduled(fixedRateString = "${spring.task.scheduling.outboxRetryWorker.rateMillis}")
-    @Retry(name=KAFKA_ORDER_SERVICE)
-    @Transactional
-    public void process() {
+    @Value("${application.outbox.worker.maxEventsProcessedPerCycle}")
+    private int maxEventsProcessedPerCycle;
 
-        //1. query UpdateOrderOutbox (create a special filtering method (status + lockedUntil non existent or less than now )) -> may have to set lockedUntil on saving new events
+    @Value("${application.kafka.topic-names.updateOrderStatus}")
+    private String updateOrderStatusTopicName;
 
-        //2. load it into the Kafka
+    @Scheduled(fixedDelayString = "${spring.task.scheduling.outboxRetryWorker.delayMillis}")
+    public void process(){
+        int processed = 0;
 
-        //3. update Payment -> set FINISHED
+        while(processed < maxEventsProcessedPerCycle) {
+            processed++;
 
-        //4. update OutboxEvent -> set PROCESSED (or whatever status it has)
+            Optional<UpdateOrderOutboxEntity> outboxEntityOpt = updateOrderOutboxRepository.findUnprocessedUnlockedWithLeaseLock();
 
-        //if fail -> increment processAttempt counter
-        //if it's greater than some threshold -> update the OutboxEvent as DEAD_LETTER
-        // + update Payment -> set FAILED (no guaranties as it's out of transactions, but it's the best we can get, I guess)
+            if (outboxEntityOpt.isEmpty())
+                return;
+
+            UpdateOrderOutboxEntity entity = outboxEntityOpt.get();
+
+            try {
+                kafkaTemplate.send(
+                        updateOrderStatusTopicName,
+                        objectMapper.writeValueAsString(entity)
+                ).get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            } catch (JsonProcessingException e) {
+                entity.setOutboxEventStatus(OutboxEventStatus.DEAD_LETTER);
+                updateOrderOutboxRepository.updateWithLeaseToken(entity, entity.getLeaseToken());
+                log.debug("Failed to serialize message: {}\nSerialization fail stack trace: {}", entity, e.getMessage());
+                continue;
+            } catch (ExecutionException e) {
+                entity.incrementRetryCount();
+
+                if(entity.getRetryCount() > workerRetriesThreshold) {
+                    entity.setOutboxEventStatus(OutboxEventStatus.DEAD_LETTER);
+                    log.debug("DEAD_LETTER - Exceeded retries threshold for entity: {}", entity);
+                } else{
+                    entity.setOutboxEventStatus(OutboxEventStatus.UNPROCESSED);
+                }
+
+                entity.setLockedUntil(LocalDateTime.now());
+                boolean isUpdateSuccessful = updateOrderOutboxRepository.updateWithLeaseToken(entity, entity.getLeaseToken());
+                log.debug("FAILED processing entity {}. Tried to save it with lease token check. Saved successfully: {}", entity, isUpdateSuccessful);
+                continue;
+            }
+
+            entity.setOutboxEventStatus(OutboxEventStatus.COMPLETED);
+            boolean isUpdateSuccessful = updateOrderOutboxRepository.updateWithLeaseToken(entity, entity.getLeaseToken());
+            log.debug("SUCCEEDED processing entity {}. Tried to save it with lease token check. Saved successfully: {}", entity, isUpdateSuccessful);
+        }
     }
 
 }

@@ -2,6 +2,7 @@ package com.innowise.paymentservice.infrastructure.adapter.out;
 
 import com.innowise.paymentservice.domain.model.Payment;
 import com.innowise.paymentservice.domain.model.PaymentFilter;
+import com.innowise.paymentservice.domain.model.PaymentStatus;
 import com.innowise.paymentservice.domain.port.out.PaymentFilteringRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,6 +13,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.support.PageableExecutionUtils;
 
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 public class PaymentFilteringRepositoryImpl implements PaymentFilteringRepository {
@@ -58,4 +60,18 @@ public class PaymentFilteringRepositoryImpl implements PaymentFilteringRepositor
                 () -> mongoTemplate.count(countQuery, Payment.class)
         );
     }
+
+//    @Override
+//    public Optional<Payment> findByOrderIdPending(Long orderId) {
+//
+//        Query query = new Query();
+//
+//        query.addCriteria(
+//                Criteria.where("order_id").is(orderId)
+//                        .and("status").is(PaymentStatus.PENDING)
+//        );
+//        query.limit(1);
+//
+//        return Optional.ofNullable(mongoTemplate.findOne(query, Payment.class));
+//    }
 }

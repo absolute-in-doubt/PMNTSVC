@@ -60,7 +60,8 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
                         eventPublisher.publishEvent(
                                 new UpdateOrderEvent(
                                         persistentPayment.getOrderId(),
-                                        OrderStatus.PAID
+                                        createPaymentPGResponseDto.paymentStatus() == PaymentStatus.SUCCESS?
+                                                OrderStatus.PAID : OrderStatus.PAYMENT_FAILED
                                 )
                         );
                         mongoTransactionManager.commit(txStatus);
@@ -94,7 +95,7 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
     @Override
     public PaymentResponseDto getPaymentById(Long userId, String paymentId, boolean isAdmin) {
 
-        Payment payment = paymentRepository.findById(paymentId).orElseThrow(() ->new PaymentNotFoundException(paymentId));
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(() -> new PaymentNotFoundException("Failed to find a payment with id: " + paymentId));
         if(!isAdmin && !payment.getUserId().equals(userId))
             throw new AccessDeniedException("You’re not allowed to access other users' payments");
 
