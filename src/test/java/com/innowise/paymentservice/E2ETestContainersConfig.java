@@ -4,9 +4,9 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.mongodb.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -36,9 +36,9 @@ public class E2ETestContainersConfig {
 
     // ==================== Kafka Container ====================
     @Bean
-    @ServiceConnection
+    @ServiceConnection(name = "kafka")
     public KafkaContainer kafkaContainer(Network network) {
-        KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("apache/kafka:4.0.0"))
+        return new KafkaContainer(DockerImageName.parse("apache/kafka:4.0.0"))
                 .withNetwork(network)
                 .withNetworkAliases("kafka")
                 .withExposedPorts(9092)
@@ -54,46 +54,36 @@ public class E2ETestContainersConfig {
                 .withEnv("KAFKA_DEFAULT_REPLICATION_FACTOR", "1")
                 .withEnv("KAFKA_MIN_INSYNC_REPLICAS", "1")
                 .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
-                .waitingFor(Wait.forListeningPorts(9092));
-        return kafka;
+                .waitingFor(Wait.forListeningPort());
     }
 
     // ==================== MongoDB Container with Replica Set ====================
     @Bean
-    @ServiceConnection
+    @ServiceConnection(name = "mongodb")
     public MongoDBContainer mongoDbContainer(Network network) {
-        MongoDBContainer mongo = new MongoDBContainer(DockerImageName.parse("mongodb/mongodb-atlas-local:8.0.0"))
+        DockerImageName mongoImage = DockerImageName.parse("mongodb/mongodb-atlas-local:8.0.0")
+                .asCompatibleSubstituteFor("mongo");
+        return new MongoDBContainer(mongoImage)
                 .withNetwork(network)
                 .withNetworkAliases("mongodb")
                 .withExposedPorts(27017)
-                .withEnv("MONGODB_INITDB_ROOT_USERNAME", "myuser")
-                .withEnv("MONGODB_INITDB_ROOT_PASSWORD", "secret")
-                .withCommand("mongod", "--replSet", "rs0", "--bind_ip_all")
-                .waitingFor(Wait.forListeningPorts(27017));
-        return mongo;
+                .withCommand("mongod --replSet rs0 --bind_ip_all")
+                .waitingFor(Wait.forListeningPort());
     }
 
-    // ==================== MongoDB Initialization Container ====================
+    // ==================== MongoDB Replica Set Initialization ====================
     @Bean
-    public GenericContainer<?> mongoInitContainer(
+    public GenericContainer<?> mongoInitReplicaSet(
             Network network,
             MongoDBContainer mongoDbContainer
     ) {
+        String cmd = "bash -c 'sleep 10 && mongosh --host mongodb --eval \"rs.initiate({_id: \\\"rs0\\\", members: [{_id: 0, host: \\\"mongodb:27017\\\"}]})\" && sleep 5'";
         return new GenericContainer<>(DockerImageName.parse("mongodb/mongodb-atlas-local:8.0.0"))
                 .withNetwork(network)
                 .withNetworkAliases("mongo-init")
-                .withCommand(
-                        """
-                                bash -c "sleep 10 &&
-                                      mongosh --host mongodb --eval '
-                                        rs.initiate({_id: \\"rs0\\", members: [{_id: 0, host: \\"mongodb:27017\\"}]});
-                                        while (rs.status().ok !== 1) { sleep(1000); }
-                                      '"
-                       """
-                )
+                .withCommand(cmd)
                 .dependsOn(mongoDbContainer)
-                .withStartupAttempts(3)
-                .waitingFor(Wait.forLogMessage(".*rs0.*", 1));
+                .withStartupAttempts(3);
     }
 
     // ==================== PostgreSQL for OrderService ====================
@@ -107,7 +97,7 @@ public class E2ETestContainersConfig {
                 .withEnv("POSTGRES_USER", "myuser")
                 .withEnv("POSTGRES_PASSWORD", "secret")
                 .withEnv("PGDATA", "/var/lib/postgresql/data/pgdata")
-                .waitingFor(Wait.forListeningPorts(5432));
+                .waitingFor(Wait.forListeningPort());
     }
 
     // ==================== PostgreSQL for AuthService ====================
@@ -121,7 +111,7 @@ public class E2ETestContainersConfig {
                 .withEnv("POSTGRES_USER", "myuser")
                 .withEnv("POSTGRES_PASSWORD", "secret")
                 .withEnv("PGDATA", "/var/lib/postgresql/data/pgdata")
-                .waitingFor(Wait.forListeningPorts(5432));
+                .waitingFor(Wait.forListeningPort());
     }
 
     // ==================== PostgreSQL for UserService ====================
@@ -135,7 +125,7 @@ public class E2ETestContainersConfig {
                 .withEnv("POSTGRES_USER", "myuser")
                 .withEnv("POSTGRES_PASSWORD", "secret")
                 .withEnv("PGDATA", "/var/lib/postgresql/data/pgdata")
-                .waitingFor(Wait.forListeningPorts(5432));
+                .waitingFor(Wait.forListeningPort());
     }
 
     // ==================== Redis Container ====================

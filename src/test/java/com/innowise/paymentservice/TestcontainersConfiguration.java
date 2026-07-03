@@ -4,9 +4,9 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.mongodb.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -23,15 +23,16 @@ import java.time.Duration;
  * - MongoDB (mongodb/mongodb-atlas-local:8.0.0) with replica set rs0
  */
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {
+public class TestcontainersConfiguration {
 
 	@Bean
 	public Network network() {
 		return Network.newNetwork();
 	}
 
+	// ==================== Kafka Container ====================
 	@Bean
-	@ServiceConnection
+	@ServiceConnection(name = "kafka")
 	KafkaContainer kafkaContainer(Network network) {
 		return new KafkaContainer(DockerImageName.parse("apache/kafka:4.0.0"))
 				.withNetwork(network)
@@ -49,42 +50,23 @@ class TestcontainersConfiguration {
 				.withEnv("KAFKA_DEFAULT_REPLICATION_FACTOR", "1")
 				.withEnv("KAFKA_MIN_INSYNC_REPLICAS", "1")
 				.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
-				.waitingFor(Wait.forListeningPorts(9092));
+				.waitingFor(Wait.forListeningPort());
 	}
 
+	// ==================== MongoDB Container with Replica Set ====================
+
 	@Bean
-	@ServiceConnection
-	MongoDBContainer mongoDbContainer(Network network) {
-		return new MongoDBContainer(DockerImageName.parse("mongodb/mongodb-atlas-local:8.0.0"))
+	@ServiceConnection(name = "mongodb")
+	MongoDBContainer mongoContainer(Network network) {
+
+		return new MongoDBContainer("mongo:8.0")
 				.withNetwork(network)
 				.withNetworkAliases("mongodb")
+				.withEnv("MONGODB_INITDB_ROOT_USERNAME", "testusername")
+				.withEnv("MONGODB_INITDB_ROOT_PASSWORD", "testpassword")
 				.withExposedPorts(27017)
-				.withEnv("MONGODB_INITDB_ROOT_USERNAME", "myuser")
-				.withEnv("MONGODB_INITDB_ROOT_PASSWORD", "secret")
-				.withCommand("mongod", "--replSet", "rs0", "--bind_ip_all")
-				.waitingFor(Wait.forListeningPorts(27017));
+				.waitingFor(Wait.forListeningPort());
 	}
 
-	@Bean
-	public GenericContainer<?> mongoInitContainer(
-			Network network,
-			MongoDBContainer mongoDbContainer
-	) {
-		return new GenericContainer<>(DockerImageName.parse("mongodb/mongodb-atlas-local:8.0.0"))
-				.withNetwork(network)
-				.withNetworkAliases("mongo-init")
-				.withCommand(
-						"""
-								bash -c "sleep 10 &&
-								      mongosh --host mongodb --eval '
-								        rs.initiate({_id: \\"rs0\\", members: [{_id: 0, host: \\"mongodb:27017\\"}]});
-								        while (rs.status().ok !== 1) { sleep(1000); }
-								      '"
-								"""
-				)
-				.dependsOn(mongoDbContainer)
-				.withStartupAttempts(3)
-				.waitingFor(Wait.forLogMessage(".*rs0.*", 1));
-	}
 
 }

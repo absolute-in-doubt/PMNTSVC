@@ -2,8 +2,6 @@ package com.innowise.paymentservice.infrastructure.adapter.out;
 
 import com.innowise.paymentservice.domain.model.Payment;
 import com.innowise.paymentservice.domain.model.PaymentFilter;
-import com.innowise.paymentservice.domain.model.PaymentStatus;
-import com.innowise.paymentservice.domain.port.out.PaymentFilteringRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,9 +9,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.support.PageableExecutionUtils;
-
-import java.util.List;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 public class PaymentFilteringRepositoryImpl implements PaymentFilteringRepository {

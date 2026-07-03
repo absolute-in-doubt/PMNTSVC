@@ -4,13 +4,10 @@ import com.innowise.paymentservice.domain.model.Payment;
 import com.innowise.paymentservice.domain.model.PaymentStatus;
 import com.innowise.paymentservice.domain.model.PaymentSummary;
 import com.innowise.paymentservice.domain.model.PaymentSummaryFilter;
-import com.innowise.paymentservice.domain.port.out.PaymentAggregationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.math.BigDecimal;
 
 @RequiredArgsConstructor
 public class PaymentAggregationRepositoryImpl implements PaymentAggregationRepository {

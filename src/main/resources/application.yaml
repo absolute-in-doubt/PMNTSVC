@@ -5,7 +5,7 @@ spring:
 application:
   persistence:
     mongodb:
-      uri: mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWD}@${MONGODB_HOSTNAME}:27017/payment_service_db?authSource=admin&replicaSet=rs0
+      uri: mongodb://${MONGODB_USERNAME:testusername}:${MONGODB_PASSWD:testpassword}@${MONGODB_HOSTNAME:localhost}:27017/payment_service_db?authSource=admin&replicaSet=rs0
   paymentGateway:
     randomMockPaymentGatewayUrl: https://api.random.org/json-rpc/4/invoke
     apiKey: ${RANDOM_ORG_API_KEY}
@@ -25,7 +25,7 @@ application:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     producer-send-timeout-ms: 3000
     topic-names:
-      updateOrderStatus: ${UPDATE_ORDER_STATUS_KAFKA_TOPIC_NAME}
+      updateOrderStatus: ${UPDATE_ORDER_STATUS_KAFKA_TOPIC_NAME:test_topic}
 
 resilience4j:
   circuitbreaker:
