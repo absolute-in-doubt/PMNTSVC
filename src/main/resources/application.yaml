@@ -9,7 +9,7 @@ spring:
 application:
   paymentGateway:
     randomMockPaymentGatewayUrl: https://api.random.org/json-rpc/4/invoke
-    apiKey: ${RANDOM_ORG_API_KEY}
+    apiKey: ${RANDOM_ORG_API_KEY:mockApiKey}
   task:
     scheduling:
       poolSize: 3
