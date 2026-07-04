@@ -20,7 +20,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.concurrent.CompletionException;
 
 @Slf4j
@@ -43,6 +45,8 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
         Payment payment = paymentMapper.toEntity(requestDto);
         payment.setUserId(userId);
         Payment persistentPayment = paymentRepository.save(payment);
+
+        log.trace("initiatePayment() persistentPayment status right after saving it: {}", persistentPayment.getStatus());
 
         paymentGatewayClient.performPayment(new CreatePaymentPGRequestDto(
                                 persistentPayment.getId(),
@@ -119,6 +123,13 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
         if(isAdmin)
             userId = null;
         PaymentSummaryFilter psFilter = new PaymentSummaryFilter(userId, timestampFrom, timestampTo);
-        return new PaymentsSummaryResponseDto(paymentRepository.getTotalSuccessfulPaymentAmount(psFilter).getTotalAmount());
+        BigDecimal totalSum;
+        Optional<PaymentSummary> psOpt = paymentRepository.getTotalSuccessfulPaymentAmount(psFilter);
+        if(psOpt.isPresent())
+            totalSum = psOpt.get().getTotalAmount();
+        else
+            totalSum = new BigDecimal(0);
+
+        return new PaymentsSummaryResponseDto(totalSum);
     }
 }

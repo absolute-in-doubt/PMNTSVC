@@ -276,7 +276,7 @@ class PaymentApplicationServiceImplTest {
         );
 
         when(paymentRepository.getTotalSuccessfulPaymentAmount(expectedFilter))
-                .thenReturn(paymentSummary);
+                .thenReturn(Optional.of(paymentSummary));
 
         // When
         PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
@@ -304,7 +304,7 @@ class PaymentApplicationServiceImplTest {
         );
 
         when(paymentRepository.getTotalSuccessfulPaymentAmount(eq(expectedFilter)))
-                .thenReturn(paymentSummary);
+                .thenReturn(Optional.of(paymentSummary));
 
         // When
         PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(

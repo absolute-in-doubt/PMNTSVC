@@ -60,6 +60,7 @@ public class TestcontainersConfiguration {
 	MongoDBContainer mongoContainer(Network network) {
 
 		return new MongoDBContainer("mongo:8.0")
+				.withReplicaSet()
 				.withNetwork(network)
 				.withNetworkAliases("mongodb")
 				.withEnv("MONGODB_INITDB_ROOT_USERNAME", "testusername")

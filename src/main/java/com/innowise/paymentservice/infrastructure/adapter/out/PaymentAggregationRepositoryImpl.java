@@ -5,17 +5,23 @@ import com.innowise.paymentservice.domain.model.PaymentStatus;
 import com.innowise.paymentservice.domain.model.PaymentSummary;
 import com.innowise.paymentservice.domain.model.PaymentSummaryFilter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.bson.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+import java.util.Optional;
+
+@Slf4j
 @RequiredArgsConstructor
 public class PaymentAggregationRepositoryImpl implements PaymentAggregationRepository {
 
     private final MongoTemplate mongoTemplate;
 
     @Override
-    public PaymentSummary getTotalSuccessfulPaymentAmount(PaymentSummaryFilter psFilter) {
+    public Optional<PaymentSummary> getTotalSuccessfulPaymentAmount(PaymentSummaryFilter psFilter) {
 
         Criteria criteria = Criteria.where("status").is(PaymentStatus.SUCCESS);
 
@@ -44,10 +50,10 @@ public class PaymentAggregationRepositoryImpl implements PaymentAggregationRepos
                         .as("totalAmount")
         );
 
-        return mongoTemplate.aggregate(
+        return Optional.ofNullable(mongoTemplate.aggregate(
                 aggregation,
                 Payment.class,
                 PaymentSummary.class
-        ).getUniqueMappedResult();
+        ).getUniqueMappedResult());
     }
 }

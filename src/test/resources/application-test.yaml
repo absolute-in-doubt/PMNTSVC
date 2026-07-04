@@ -10,6 +10,7 @@ logging:
     org.springframework.data.mongodb: DEBUG
     org.mongodb.driver: DEBUG
     org.springframework.boot.autoconfigure.data.mongo: DEBUG
+    com.innowise.paymentservice: TRACE
 
   paymentGateway:
     randomMockPaymentGatewayUrl: https://api.random.org/json-rpc/4/invoke

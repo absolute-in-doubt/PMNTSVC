@@ -3,6 +3,7 @@ package com.innowise.paymentservice.infrastructure.adapter.out;
 import com.innowise.paymentservice.domain.model.Payment;
 import com.innowise.paymentservice.domain.model.PaymentFilter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -10,6 +11,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.support.PageableExecutionUtils;
 
+import java.util.List;
+
+@Slf4j
 @RequiredArgsConstructor
 public class PaymentFilteringRepositoryImpl implements PaymentFilteringRepository {
 
@@ -35,22 +39,32 @@ public class PaymentFilteringRepositoryImpl implements PaymentFilteringRepositor
                     Criteria.where("status").in(paymentFilter.getStatuses())
             );
 
-        if(paymentFilter.getTimestampFrom() != null)
-            query.addCriteria(
-                    Criteria.where("timestamp").gte(paymentFilter.getTimestampFrom())
-            );
+        if (paymentFilter.getTimestampFrom() != null || paymentFilter.getTimestampTo() != null) {
+            Criteria timestamp = Criteria.where("timestamp");
 
-        if(paymentFilter.getTimestampTo() != null)
+            if (paymentFilter.getTimestampFrom() != null) {
+                timestamp.gte(paymentFilter.getTimestampFrom());
+            }
+
+            if (paymentFilter.getTimestampTo() != null) {
+                timestamp.lte(paymentFilter.getTimestampTo());
+            }
             query.addCriteria(
-                    Criteria.where("timestamp").lte(paymentFilter.getTimestampTo())
+                    timestamp
             );
+        }
+
+        query.with(pageable);
+
+
+        List<Payment> paymentsList = mongoTemplate.find(query, Payment.class);
 
         Query countQuery = Query.of(query)
                 .limit(-1)
                 .skip(-1);
 
         return PageableExecutionUtils.getPage(
-                mongoTemplate.find(query, Payment.class),
+                paymentsList,
                 pageable,
                 () -> mongoTemplate.count(countQuery, Payment.class)
         );

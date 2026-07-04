@@ -1,5 +1,6 @@
 package com.innowise.paymentservice.application.service.impl;
 
+import com.innowise.paymentservice.TestcontainersConfiguration;
 import com.innowise.paymentservice.application.dto.*;
 import com.innowise.paymentservice.application.mapper.PaymentFilterMapper;
 import com.innowise.paymentservice.application.mapper.PaymentMapper;
@@ -42,7 +43,7 @@ import static org.mockito.Mockito.*;
 @Slf4j
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(com.innowise.paymentservice.MongoTestConfig.class)
+@Import(TestcontainersConfiguration.class)
 class PaymentApplicationServiceImplIT {
 
     @Autowired
@@ -118,7 +119,7 @@ class PaymentApplicationServiceImplIT {
         assertEquals(100L, result.orderId());
         assertEquals(1L, result.userId());
         assertEquals(BigDecimal.valueOf(100.0), result.paymentAmount());
-        assertEquals(PaymentStatus.PENDING, result.status());
+        assertTrue(result.status() == PaymentStatus.PENDING || result.status() == PaymentStatus.SUCCESS); //as the update gets performed asynchronously it gets performed almost immediately due to the PaymentGateway client mocking.
 
         // Verify payment was saved to database
         Optional<Payment> savedPayment = paymentRepository.findById(result.id());
