@@ -2,6 +2,7 @@ package com.innowise.paymentservice.infrastructure.adapter.in;
 
 import com.innowise.paymentservice.application.dto.*;
 import com.innowise.paymentservice.application.port.in.PaymentsController;
+import com.innowise.paymentservice.application.security.model.UserContext;
 import com.innowise.paymentservice.application.service.PaymentApplicationService;
 import com.innowise.paymentservice.domain.model.PaymentSummaryFilter;
 import com.innowise.paymentservice.domain.model.PaymentStatus;
@@ -122,7 +123,10 @@ public class PaymentsControllerImpl implements PaymentsController {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new AccessDeniedException("User not authenticated");
         }
-        return Long.parseLong(authentication.getName());
+
+        UserContext userContext = (UserContext) authentication.getPrincipal();
+
+        return userContext.userId();
     }
 
     private boolean hasRole(Authentication authentication, String role) {
