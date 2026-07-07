@@ -37,7 +37,7 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
     private final PlatformTransactionManager mongoTransactionManager;
     private final ApplicationEventPublisher eventPublisher;
 
-    private final Long SPECIAL_QUERY_ALL_USER_ID = -999L;
+    private static final Long SPECIAL_QUERY_ALL_USER_ID = -999L;
 
     @Override
     public PaymentResponseDto initiatePayment(Long userId, CreatePaymentRequestDto requestDto) {
