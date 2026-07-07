@@ -60,7 +60,7 @@ public class UpdateOrderOutboxExtensionRepositoryImpl implements UpdateOrderOutb
                 .set("retryCount", entity.getRetryCount());
 
         Criteria criteria = new Criteria().andOperator(
-                Criteria.where("status").is(OutboxEventStatus.UNPROCESSED),
+                Criteria.where("outboxEventStatus").is(OutboxEventStatus.UNPROCESSED),
                 new Criteria().andOperator(
                         Criteria.where("id").is(entity.getId()),
                         Criteria.where("lockedUntil").lt(LocalDateTime.now()),
