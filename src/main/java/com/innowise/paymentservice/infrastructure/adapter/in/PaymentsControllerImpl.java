@@ -1,12 +1,14 @@
 package com.innowise.paymentservice.infrastructure.adapter.in;
 
+import com.innowise.paymentservice.application.annotation.DynamicJsonView;
 import com.innowise.paymentservice.application.dto.*;
 import com.innowise.paymentservice.application.port.in.PaymentsController;
 import com.innowise.paymentservice.application.security.model.UserContext;
 import com.innowise.paymentservice.application.service.PaymentApplicationService;
 import com.innowise.paymentservice.domain.model.PaymentSummaryFilter;
-import com.innowise.paymentservice.domain.model.PaymentStatus;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -16,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -23,12 +26,14 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
+@Validated
 public class PaymentsControllerImpl implements PaymentsController {
 
     private final PaymentApplicationService paymentApplicationService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @DynamicJsonView
     @Override
     public ResponseEntity<PaymentResponseDto> initiatePayment(
             Authentication authentication,
@@ -42,6 +47,7 @@ public class PaymentsControllerImpl implements PaymentsController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @DynamicJsonView
     @Override
     public ResponseEntity<PaymentResponseDto> getPaymentById(
             Authentication authentication,
@@ -56,10 +62,11 @@ public class PaymentsControllerImpl implements PaymentsController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @DynamicJsonView
     @Override
     public ResponseEntity<Page<PaymentResponseDto>> getPaymentsFiltered(
             Authentication authentication,
-            PaymentFilterRequest paymentFilter,
+            @ParameterObject @Valid PaymentFilterRequest paymentFilter,
             @PageableDefault Pageable pageable) {
         
         Long userId = extractUserId(authentication);
@@ -76,7 +83,7 @@ public class PaymentsControllerImpl implements PaymentsController {
     @Override
     public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAuthenticatedUser(
             Authentication authentication,
-            PaymentSummaryFilter psFilter) {
+            @ParameterObject @Valid PaymentSummaryFilter psFilter) {
         
         Long authenticatedUserId = extractUserId(authentication);
         boolean isAdmin = hasRole(authentication, "ADMIN");
@@ -96,7 +103,7 @@ public class PaymentsControllerImpl implements PaymentsController {
     @Override
     public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAdmin(
             Authentication authentication,
-            PaymentSummaryFilter psFilter) {
+            @ParameterObject @Valid PaymentSummaryFilter psFilter) {
         
         boolean isAdmin = hasRole(authentication, "ADMIN");
         PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
