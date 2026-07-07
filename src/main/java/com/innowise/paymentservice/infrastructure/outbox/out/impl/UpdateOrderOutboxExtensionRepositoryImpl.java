@@ -71,7 +71,7 @@ public class UpdateOrderOutboxExtensionRepositoryImpl implements UpdateOrderOutb
         UpdateResult result = mongoTemplate.updateFirst(
                 Query.query(criteria),
                 update,
-                OutboxEventStatus.class
+                UpdateOrderOutboxEntity.class
         );
 
         return result.getModifiedCount() == 1;
