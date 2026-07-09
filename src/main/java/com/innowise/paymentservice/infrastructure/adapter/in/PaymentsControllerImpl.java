@@ -5,7 +5,6 @@ import com.innowise.paymentservice.application.dto.*;
 import com.innowise.paymentservice.application.port.in.PaymentsController;
 import com.innowise.paymentservice.application.security.model.UserContext;
 import com.innowise.paymentservice.application.service.PaymentApplicationService;
-import com.innowise.paymentservice.domain.model.PaymentSummaryFilter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -78,39 +77,40 @@ public class PaymentsControllerImpl implements PaymentsController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/users/summary")
+    @GetMapping("/users/{userId}/summary")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Override
-    public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAuthenticatedUser(
+    public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummary(
             Authentication authentication,
-            @ParameterObject @Valid PaymentSummaryFilter psFilter) {
+            @PathVariable("userId") Long userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime timestampFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime timestampTo) {
         
         Long authenticatedUserId = extractUserId(authentication);
         boolean isAdmin = hasRole(authentication, "ADMIN");
         
         // For USER role, override userId with their own ID
-        Long userIdToUse = isAdmin && psFilter.userId() != null ? psFilter.userId() : authenticatedUserId;
-        
-        PaymentSummaryFilter filterToUse = new PaymentSummaryFilter(userIdToUse, psFilter.timestampFrom(), psFilter.timestampTo());
+        Long userIdToUse = isAdmin?  userId : authenticatedUserId;
+
         PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
-                filterToUse.userId(), filterToUse.timestampFrom(), filterToUse.timestampTo(), isAdmin);
+                userIdToUse, timestampFrom, timestampTo, isAdmin);
         
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/summary")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Override
-    public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAdmin(
-            Authentication authentication,
-            @ParameterObject @Valid PaymentSummaryFilter psFilter) {
-        
-        boolean isAdmin = hasRole(authentication, "ADMIN");
-        PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
-                psFilter.userId(), psFilter.timestampFrom(), psFilter.timestampTo(), isAdmin);
-        
-        return ResponseEntity.ok(result);
-    }
+//    @GetMapping("/summary")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    @Override
+//    public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAdmin(
+//            Authentication authentication,
+//            @ParameterObject @Valid PaymentSummaryFilter psFilter) {
+//
+//        boolean isAdmin = hasRole(authentication, "ADMIN");
+//        PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
+//                psFilter.userId(), psFilter.timestampFrom(), psFilter.timestampTo(), isAdmin);
+//
+//        return ResponseEntity.ok(result);
+//    }
 
     @GetMapping("/summary/all")
     @PreAuthorize("hasRole('ADMIN')")
@@ -118,8 +118,7 @@ public class PaymentsControllerImpl implements PaymentsController {
     public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAll(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime timestampFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime timestampTo) {
-        
-        PaymentSummaryFilter psFilter = new PaymentSummaryFilter(null, timestampFrom, timestampTo);
+
         PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
                 null, timestampFrom, timestampTo, true);
         

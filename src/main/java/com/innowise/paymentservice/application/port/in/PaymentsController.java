@@ -17,9 +17,9 @@ public interface PaymentsController {
 
     ResponseEntity<Page<PaymentResponseDto>> getPaymentsFiltered(Authentication authentication, PaymentFilterRequest paymentFilter, Pageable pageable);
 
-    ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAuthenticatedUser(Authentication authentication, PaymentSummaryFilter psFilter);
+    //ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAuthenticatedUser(Authentication authentication, PaymentSummaryFilter psFilter);
 
-    ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAdmin(Authentication authentication, PaymentSummaryFilter psFilter);
+    ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummary(Authentication authentication, Long userId, LocalDateTime timestampFrom, LocalDateTime timestampTo);
 
     ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAll(LocalDateTime timestampFrom, LocalDateTime timestampTo);
 }
