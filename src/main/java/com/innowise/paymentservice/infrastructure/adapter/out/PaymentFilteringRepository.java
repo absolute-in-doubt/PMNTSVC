@@ -9,6 +9,4 @@ import org.springframework.data.domain.Pageable;
 public interface PaymentFilteringRepository {
 
     Page<Payment> findAll(PaymentFilter paymentFilter, Pageable pageable);
-
-    //Optional<Payment> findByOrderIdPending(Long orderId);
 }

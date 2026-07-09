@@ -88,8 +88,7 @@ public class PaymentsControllerImpl implements PaymentsController {
         
         Long authenticatedUserId = extractUserId(authentication);
         boolean isAdmin = hasRole(authentication, "ADMIN");
-        
-        // For USER role, override userId with their own ID
+
         Long userIdToUse = isAdmin?  userId : authenticatedUserId;
 
         PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
@@ -98,19 +97,6 @@ public class PaymentsControllerImpl implements PaymentsController {
         return ResponseEntity.ok(result);
     }
 
-//    @GetMapping("/summary")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    @Override
-//    public ResponseEntity<PaymentsSummaryResponseDto> getPaymentSummaryForAdmin(
-//            Authentication authentication,
-//            @ParameterObject @Valid PaymentSummaryFilter psFilter) {
-//
-//        boolean isAdmin = hasRole(authentication, "ADMIN");
-//        PaymentsSummaryResponseDto result = paymentApplicationService.getPaymentSummary(
-//                psFilter.userId(), psFilter.timestampFrom(), psFilter.timestampTo(), isAdmin);
-//
-//        return ResponseEntity.ok(result);
-//    }
 
     @GetMapping("/summary/all")
     @PreAuthorize("hasRole('ADMIN')")

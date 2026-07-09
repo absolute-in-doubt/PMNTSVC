@@ -76,10 +76,6 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
                     }
 
                 }).exceptionally(ex -> {
-                    // Handle failure: update status to FAILED, log, etc.
-                    // Also handles the OptimisticLockingFailureException as it means
-                    // that we for some reason have multiple requests performing the same task
-                    // (Resilience4j set up issues)
                     persistentPayment.setStatus(PaymentStatus.FAILED);
                     paymentRepository.save(persistentPayment);
                     eventPublisher.publishEvent(

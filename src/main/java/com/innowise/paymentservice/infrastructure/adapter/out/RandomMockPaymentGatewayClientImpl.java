@@ -21,10 +21,10 @@ import java.util.concurrent.atomic.AtomicLong;
 @RequiredArgsConstructor
 public class RandomMockPaymentGatewayClientImpl implements PaymentGatewayClient {
 
-    private final String PAYMENT_GATEWAY = "paymentGateway";
-    private final double JSON_RPC_VERSION = 2.0;
-    private final String GENERATE_INTEGERS_METHOD_NAME = "generateIntegers";
-    private final int AMT_OF_INTEGERS_REQUESTED = 1;
+    private static final String PAYMENT_GATEWAY = "paymentGateway";
+    private static final double JSON_RPC_VERSION = 2.0;
+    private static final String GENERATE_INTEGERS_METHOD_NAME = "generateIntegers";
+    private static final int AMT_OF_INTEGERS_REQUESTED = 1;
     private final AtomicLong requestId = new AtomicLong();
 
     private final WebClient paymentGatewayWebClient;
@@ -36,7 +36,7 @@ public class RandomMockPaymentGatewayClientImpl implements PaymentGatewayClient 
     private String randomOrgApiKey;
 
     @Override
-    @CircuitBreaker(name = PAYMENT_GATEWAY) //TODO add CallNotPermittedException to the ControllerAdvice
+    @CircuitBreaker(name = PAYMENT_GATEWAY)
     @Retry(name = PAYMENT_GATEWAY)
     @TimeLimiter(name = PAYMENT_GATEWAY)
     public CompletableFuture<CreatePaymentPGResponseDto> performPayment(CreatePaymentPGRequestDto requestDto) {

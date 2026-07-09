@@ -69,18 +69,4 @@ public class PaymentFilteringRepositoryImpl implements PaymentFilteringRepositor
                 () -> mongoTemplate.count(countQuery, Payment.class)
         );
     }
-
-//    @Override
-//    public Optional<Payment> findByOrderIdPending(Long orderId) {
-//
-//        Query query = new Query();
-//
-//        query.addCriteria(
-//                Criteria.where("order_id").is(orderId)
-//                        .and("status").is(PaymentStatus.PENDING)
-//        );
-//        query.limit(1);
-//
-//        return Optional.ofNullable(mongoTemplate.findOne(query, Payment.class));
-//    }
 }
