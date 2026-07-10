@@ -1,0 +1,162 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8084:8084"
+    depends_on:
+      orderservice:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  kafka:
+    container_name: 'paymentservice_kafka'
+    image: 'apache/kafka:4.0.0'
+    ports:
+      - "9092:9092"
+    env_file:
+      - env/kafka.env
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  mongodb:
+    container_name: 'paymentservice_mongodb'
+    image: 'mongodb/mongodb-atlas-local:8.0.0'
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    env_file:
+      - env/mongodb.env
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval 'db.adminCommand(\"ping\")' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mongo-init:
+    image: 'mongodb/mongodb-atlas-local:8.0.0'
+    command: >
+      bash -c "sleep 10 &&
+      mongosh --host mongodb --eval '
+        rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongodb:27017\"}]});
+        while (rs.status().ok !== 1) { sleep(1000); }
+      '"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  orderservice:
+    image: 'ghcr.io/absolute-in-doubt/ordrsvc:latest'
+    pull_policy: always
+    env_file:
+      - env/orderservice.env
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres-3:
+        condition: service_healthy
+      authservice:
+        condition: service_healthy
+      userservice:
+        condition: service_healthy
+
+  postgres-3:
+    container_name: 'orderservice_postgres'
+    image: 'postgres:15'
+    env_file:
+      - env/postgres.env
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data-3:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  authservice:
+    image: 'ghcr.io/absolute-in-doubt/authsvc:latest'
+    pull_policy: always
+    env_file:
+      - env/auth.env
+      - env/jwks.env
+      - env/client-secrets.env
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres-2:
+        condition: service_healthy
+
+  postgres-2:
+    container_name: 'authservice_postgres'
+    image: 'postgres:15'
+    environment:
+      - POSTGRES_DB=auth_service_db
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_USER=myuser
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data-2:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d auth_service_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  userservice:
+    image: 'ghcr.io/absolute-in-doubt/usrsvc:latest'
+    pull_policy: always
+    environment:
+      - POSTGRES_URL=jdbc:postgresql://userservice_postgres:5432/user_service_db
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_USER=myuser
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWKS_URL=http://authservice:8081/.well-known/jwks.json
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres-1:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres-1:
+    container_name: 'userservice_postgres'
+    image: 'postgres:15'
+    environment:
+      - POSTGRES_DB=user_service_db
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_USER=myuser
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data-1:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d user_service_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: 'redis:7.2'
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+volumes:
+  postgres_data-1:
+  postgres_data-2:
+  postgres_data-3:
+  mongodb_data:
+  kafka_data:

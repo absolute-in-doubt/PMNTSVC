@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: paymentservice
+  data:
+    mongodb:
+      uri: mongodb://testusername:testpassword@localhost:27017/payment_service_db?authSource=admin&replicaSet=rs0&retryWrites=false
+
+logging:
+  level:
+    org.springframework.data.mongodb: DEBUG
+    org.mongodb.driver: DEBUG
+    org.springframework.boot.autoconfigure.data.mongo: DEBUG
+    com.innowise.paymentservice: TRACE
+
+  paymentGateway:
+    randomMockPaymentGatewayUrl: https://api.random.org/json-rpc/4/invoke
+    apiKey: https://www.youtube.com/watch?v=9uE5B7r5Dp4
+  task:
+    scheduling:
+      poolSize: 3
+      threadNamePrefix: scheduling-
+      shutdown:
+        awaitTerminationPeriodSeconds: 180
+      outboxRetryWorker:
+        delayMillis: 30000
+  outbox:
+    worker:
+      retriesThreshold: 10
+      maxEventsProcessedPerCycle: 100
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer-send-timeout-ms: 3000
+    topic-names:
+      updateOrderStatus: test_topic
+  security:
+    jwksUrl: http://authservice:8081/.well-known/jwks
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentGateway:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - java.io.IOException
+          - org.springframework.web.client.ResourceAccessException
+          - java.lang.NullPointerException #in case the response dto is empty
+
+  retry:
+    instances:
+      paymentGateway:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.io.IOException
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpClientErrorException
+
