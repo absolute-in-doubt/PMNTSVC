@@ -1,9 +1,8 @@
 spring:
   application:
     name: paymentservice
-  data:
-    mongodb:
-      uri: mongodb://${MONGODB_USERNAME:testusername}:${MONGODB_PASSWD:testpassword}@${MONGODB_HOSTNAME:localhost}:27017/payment_service_db?authSource=admin&replicaSet=rs0&retryWrites=false
+  mongodb:
+    uri: mongodb://${MONGODB_USERNAME:testusername}:${MONGODB_PASSWD:testpassword}@${MONGODB_HOSTNAME:localhost}:27017/payment_service_db?authSource=admin&replicaSet=mongodb&retryWrites=false
 
 
 application:

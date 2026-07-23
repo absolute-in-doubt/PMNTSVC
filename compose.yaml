@@ -3,6 +3,8 @@ services:
     build: .
     ports:
       - "8084:8084"
+    env_file:
+      - env/paymentservice.env
     depends_on:
       orderservice:
         condition: service_healthy
@@ -20,34 +22,37 @@ services:
       - env/kafka.env
     volumes:
       - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
 
   mongodb:
     container_name: 'paymentservice_mongodb'
     image: 'mongodb/mongodb-atlas-local:8.0.0'
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    hostname: mongodb
     ports:
       - "27017:27017"
     env_file:
       - env/mongodb.env
     volumes:
       - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - mongodb_mongot:/data/mongot
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --eval 'db.adminCommand(\"ping\")' || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  mongo-init:
-    image: 'mongodb/mongodb-atlas-local:8.0.0'
-    command: >
-      bash -c "sleep 10 &&
-      mongosh --host mongodb --eval '
-        rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongodb:27017\"}]});
-        while (rs.status().ok !== 1) { sleep(1000); }
-      '"
-    depends_on:
-      mongodb:
-        condition: service_healthy
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet --username "$$MONGODB_INITDB_ROOT_USERNAME"
+          --password "$$MONGODB_INITDB_ROOT_PASSWORD"
+          --authenticationDatabase admin
+          --eval 'db.adminCommand({ping: 1}).ok' | grep 1
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
 
   orderservice:
     image: 'ghcr.io/absolute-in-doubt/ordrsvc:latest'
@@ -56,6 +61,12 @@ services:
       - env/orderservice.env
     ports:
       - "8082:8082"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8082/actuator/health/readiness || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
     depends_on:
       postgres-3:
         condition: service_healthy
@@ -74,7 +85,7 @@ services:
     volumes:
       - postgres_data-3:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -89,6 +100,12 @@ services:
       - env/client-secrets.env
     ports:
       - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
     depends_on:
       postgres-2:
         condition: service_healthy
@@ -123,6 +140,12 @@ services:
       - JWKS_URL=http://authservice:8081/.well-known/jwks.json
     ports:
       - "8080:8080"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health/readiness || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
     depends_on:
       postgres-1:
         condition: service_healthy
@@ -159,4 +182,6 @@ volumes:
   postgres_data-2:
   postgres_data-3:
   mongodb_data:
+  mongodb_config:
+  mongodb_mongot:
   kafka_data:
